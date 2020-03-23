@@ -30,6 +30,14 @@ int getCommandNumberFromUser()
 	return std::atoi(input.c_str());
 }
 
+void printSystemStatistics()
+{
+	char date[256];
+	time_t ttime = time(0);
+	strftime(date, sizeof(date), "time: %b/%d/%Y\nhour: %H", localtime(&ttime));
+	std::cout << "Developer: Eyal Heinrich" << std::endl << date << std::endl << std::endl;
+}
+
 int main(void)
 {
 	// initialization data access
@@ -38,10 +46,7 @@ int main(void)
 	// initialize album manager
 	AlbumManager albumManager(dataAccess);
 
-	char date[256];
-	time_t ttime = time(0);
-	strftime(date, sizeof(date), "time: %b/%d/%Y\nhour: %H", localtime(&ttime));
-	std::cout << "Developer: Eyal Heinrich" << std::endl << date << std::endl << std::endl;
+	printSystemStatistics();
 
 	std::string albumName;
 	std::cout << "Welcome to Gallery!" << std::endl;
