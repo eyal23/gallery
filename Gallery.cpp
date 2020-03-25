@@ -2,7 +2,7 @@
 #include <string>
 #include <ctime>
 
-#include "MemoryAccess.h"
+#include "DatabaseAccess.h"
 #include "AlbumManager.h"
 
 
@@ -41,10 +41,18 @@ void printSystemStatistics()
 int main(void)
 {
 	// initialization data access
-	MemoryAccess dataAccess;
+	DatabaseAccess dataAccess;
 
-	// initialize album manager
-	AlbumManager albumManager(dataAccess);
+	try
+	{
+		// initialize album manager
+		AlbumManager albumManager(dataAccess);
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		return -1;
+	}
 
 	printSystemStatistics();
 
