@@ -26,6 +26,6 @@ public:
 	void closeAlbum(Album& pAlbum) override;
 
 private:
-	void initDatabase();
+	bool initDatabase();
 };
 

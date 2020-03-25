@@ -43,16 +43,8 @@ int main(void)
 	// initialization data access
 	DatabaseAccess dataAccess;
 
-	try
-	{
-		// initialize album manager
-		AlbumManager albumManager(dataAccess);
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		return -1;
-	}
+	// initialize album manager
+	AlbumManager albumManager(dataAccess);
 
 	printSystemStatistics();
 

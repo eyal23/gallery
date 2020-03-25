@@ -2,11 +2,15 @@
 #include <io.h>
 
 #include "DatabaseAccess.h"
-#include "MyException.h"
 #include "Album.h"
 
 #define TABLES_AMOUNT 4
 
+/*
+	usage: opens the gallery database
+	in: no
+	out: if the opening succeeded
+*/
 bool DatabaseAccess::open()
 {
 	const std::string dbName = "galleryDB.sqlite";
@@ -19,26 +23,35 @@ bool DatabaseAccess::open()
 	{
 		if (isExisting == -1)
 		{
-			initDatabase();
+			if (!initDatabase())
+			{
+				db = nullptr;
+				return false;
+			}
 		}
 
-	}
-	else
-	{
-		db = nullptr;
-		throw MyException("Could'nt open database");
+		return true;
 	}
 
-	return 0;
+	db = nullptr;
+	return false;
 }
 
-
+/*
+	usage: closes the galery database
+	in: no
+	out: no
+*/
 void DatabaseAccess::close()
 {
 	sqlite3_close(this->_db);
 }
 
-
+/*
+	usage: clears all saved objects of the class
+	in: no
+	out: no
+*/
 void DatabaseAccess::clear()
 {
 	for (int i = 0; i < this->_createdUsers.size(); i++)
@@ -55,14 +68,22 @@ void DatabaseAccess::clear()
 	}
 }
 
-
+/*
+	usage: closes an album
+	in: reference to the album
+	out: no
+*/
 void DatabaseAccess::closeAlbum(Album& pAlbum)
 {
 	delete &pAlbum;
 }
 
-
-void DatabaseAccess::initDatabase()
+/*
+	usage: inits the gallery database
+	in: no
+	out: if the initialization succeeded
+*/
+bool DatabaseAccess::initDatabase()
 {
 	const char* tableCreations[TABLES_AMOUNT] = {
 		"CREATE TABLE USERS(ID INTEGER PRIMERY KEY, NAME TEXT NOT NULL);",
@@ -76,7 +97,9 @@ void DatabaseAccess::initDatabase()
 	{
 		if (sqlite3_exec(this->_db, tableCreations[i], nullptr, nullptr, &errBuff) != SQLITE_OK)
 		{
-			throw MyException("Could'nt initialize database");
+			return false;
 		}
 	}
+
+	return true;
 }
