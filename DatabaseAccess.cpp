@@ -73,9 +73,51 @@ void DatabaseAccess::clear()
 	in: reference to the album
 	out: no
 */
+void DatabaseAccess::deleteAlbum(const std::string& albumName, int userId)
+{
+	//std::string query = std::string("INSERT INTO")
+}
+
+
 void DatabaseAccess::closeAlbum(Album& pAlbum)
 {
 	delete &pAlbum;
+}
+
+
+void DatabaseAccess::addPictureToAlbumByName(const std::string& albumName, const Picture& picture)
+{
+}
+
+
+void DatabaseAccess::removePictureFromAlbumByName(const std::string& albumName, const std::string& pictureName)
+{
+}
+
+
+void DatabaseAccess::tagUserInPicture(const std::string& albumName, const std::string& pictureName, int userId)
+{
+}
+
+
+void DatabaseAccess::untagUserInPicture(const std::string& albumName, const std::string& pictureName, int userId)
+{
+}
+
+
+void DatabaseAccess::createUser(User& user)
+{
+}
+
+
+void DatabaseAccess::deleteUser(const User& user)
+{
+}
+
+
+float DatabaseAccess::averageTagsPerAlbumOfUser(const User& user)
+{
+	return 0.0f;
 }
 
 /*
