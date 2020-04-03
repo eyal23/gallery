@@ -1,8 +1,18 @@
 ﻿#include "AlbumManager.h"
+
+#include <Windows.h>
+#include <WinBase.h>
+#include <synchapi.h>
 #include <iostream>
+
 #include "Constants.h"
 #include "MyException.h"
 #include "AlbumNotOpenException.h"
+
+#pragma comment(lib, "Kernel32.lib")
+
+#define PAINT_PATH "\"C:\\WINDOWS\\system32\\mspaint.exe\""
+#define IRFANVIEW_PATH "\"C:\\Program Files\\IrfanView\\i_view64.exe\""
 
 
 AlbumManager::AlbumManager(IDataAccess& dataAccess) :
@@ -203,10 +213,13 @@ void AlbumManager::showPicture()
 		throw MyException("Error: Can't open <" + picName+ "> since it doesnt exist on disk.\n");
 	}
 
-	// Bad practice!!!
-	// Can lead to privileges escalation
-	// You will replace it on WinApi Lab(bonus)
-	system(pic.getPath().c_str()); 
+	std::cout << "Choose aplication to open the image with-" << std::endl
+		<< "1. Paint" << std::endl
+		<< "2. IrfanView" << std::endl;
+
+	int choice = stoi(getInputFromConsole(""));
+
+
 }
 
 void AlbumManager::tagUserInPicture()
@@ -431,6 +444,41 @@ void AlbumManager::refreshOpenAlbum() {
 bool AlbumManager::isCurrentAlbumSet() const
 {
     return !m_currentAlbumName.empty();
+}
+
+void AlbumManager::createApplicationProcess(std::string imagePath, int choice) const
+{
+	STARTUPINFO startupInfo;
+	PROCESS_INFORMATION processInfo;
+
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	ZeroMemory(&processInfo, sizeof(processInfo));
+
+	std::string cmdCommand = choice == 1 ? std::string(PAINT_PATH) : std::string(IRFANVIEW_PATH) +
+		std::string(" \"") +
+		imagePath +
+		std::string("\"");
+
+	if (!CreateProcessA(
+		NULL,
+		(LPSTR)cmdCommand.c_str(),
+		NULL,
+		NULL,
+		FALSE,
+		0,
+		NULL,
+		NULL,
+		&startupInfo,
+		&processInfo
+	))
+	{
+		throw MyException("Open picture failed");
+	}
+
+	WaitForSingleObject();
+
+	CloseHandle(hApplicationProcess);
 }
 
 const std::vector<struct CommandGroup> AlbumManager::m_prompts  = {
