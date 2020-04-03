@@ -219,7 +219,7 @@ void AlbumManager::showPicture()
 
 	int choice = stoi(getInputFromConsole(""));
 
-
+	createApplicationProcess(pic.getPath(), choice);
 }
 
 void AlbumManager::tagUserInPicture()
@@ -455,8 +455,10 @@ void AlbumManager::createApplicationProcess(std::string imagePath, int choice) c
 	startupInfo.cb = sizeof(startupInfo);
 	ZeroMemory(&processInfo, sizeof(processInfo));
 
-	std::string cmdCommand = choice == 1 ? std::string(PAINT_PATH) : std::string(IRFANVIEW_PATH) +
-		std::string(" \"") +
+	std::string cmdCommand = choice == 1 
+		? std::string(PAINT_PATH) 
+		: std::string(IRFANVIEW_PATH);
+	cmdCommand += std::string(" \"") +
 		imagePath +
 		std::string("\"");
 
@@ -476,9 +478,10 @@ void AlbumManager::createApplicationProcess(std::string imagePath, int choice) c
 		throw MyException("Open picture failed");
 	}
 
-	WaitForSingleObject();
+	WaitForSingleObject(processInfo.hProcess, INFINITE);
 
-	CloseHandle(hApplicationProcess);
+	CloseHandle(processInfo.hProcess);
+	CloseHandle(processInfo.hThread);
 }
 
 const std::vector<struct CommandGroup> AlbumManager::m_prompts  = {
