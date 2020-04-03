@@ -292,7 +292,7 @@ void AlbumManager::addUser()
 	User user(++m_nextUserId,name);
 	
 	m_dataAccess.createUser(user);
-	std::cout << "User " << name << " with id @" << user.getId() << " created successfully." << std::endl;
+	std::cout << "User " << name << " with id @" << user.getId() << "(incorrect id) created successfully." << std::endl;
 }
 
 
@@ -307,6 +307,27 @@ void AlbumManager::removeUser()
 	const User& user = m_dataAccess.getUser(userId);
 	if (isCurrentAlbumSet() && userId == m_openAlbum.getOwnerId()) {
 		closeAlbum();
+	}
+
+	std::list<Album> userAlbums = this->m_dataAccess.getAlbumsOfUser(this->m_dataAccess.getUser(userId));
+
+	while (!userAlbums.empty())
+	{
+		this->m_dataAccess.deleteAlbum(userAlbums.front().getName(), userId);
+		userAlbums.pop_front();
+	}
+
+	std::list<Album> allAlbums = this->m_dataAccess.getAlbums();
+
+	while (!allAlbums.empty())
+	{
+		Album album = this->m_dataAccess.openAlbum(allAlbums.front().getName());
+		std::list<Picture> currentAlbumPictures = album.getPictures();
+		for (std::list<Picture>::iterator currentPicture = currentAlbumPictures.begin(); currentPicture != currentAlbumPictures.end(); ++currentPicture)
+		{
+			this->m_dataAccess.untagUserInPicture(allAlbums.front().getName(), currentPicture->getName(), userId);
+		}
+		allAlbums.pop_front();
 	}
 
 	m_dataAccess.deleteUser(user);
@@ -329,6 +350,7 @@ void AlbumManager::userStatistics()
 	const User& user = m_dataAccess.getUser(userId);
 
 	std::cout << "user @" << userId << " Statistics:" << std::endl << "--------------------" << std::endl <<
+		"  + Count of Albums Owned: " << this->m_dataAccess.getAlbumsOfUser(this->m_dataAccess.getUser(userId)).size() << std::endl <<
 		"  + Count of Albums Tagged: " << m_dataAccess.countAlbumsTaggedOfUser(user) << std::endl <<
 		"  + Count of Tags: " << m_dataAccess.countTagsOfUser(user) << std::endl <<
 		"  + Avarage Tags per Alboum: " << m_dataAccess.averageTagsPerAlbumOfUser(user) << std::endl;
