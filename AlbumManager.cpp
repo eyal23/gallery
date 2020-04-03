@@ -309,6 +309,27 @@ void AlbumManager::removeUser()
 		closeAlbum();
 	}
 
+	std::list<Album> userAlbums = this->m_dataAccess.getAlbumsOfUser(this->m_dataAccess.getUser(userId));
+
+	while (!userAlbums.empty())
+	{
+		this->m_dataAccess.deleteAlbum(userAlbums.front().getName(), userId);
+		userAlbums.pop_front();
+	}
+
+	std::list<Album> allAlbums = this->m_dataAccess.getAlbums();
+
+	while (!allAlbums.empty())
+	{
+		Album album = this->m_dataAccess.openAlbum(allAlbums.front().getName());
+		std::list<Picture> currentAlbumPictures = album.getPictures();
+		for (std::list<Picture>::iterator currentPicture = currentAlbumPictures.begin(); currentPicture != currentAlbumPictures.end(); ++currentPicture)
+		{
+			this->m_dataAccess.untagUserInPicture(allAlbums.front().getName(), currentPicture->getName(), userId);
+		}
+		allAlbums.pop_front();
+	}
+
 	m_dataAccess.deleteUser(user);
 	std::cout << "User @" << userId << " deleted successfully." << std::endl;
 }

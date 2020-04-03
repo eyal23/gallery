@@ -174,7 +174,7 @@ void DatabaseAccess::createAlbum(const Album& album)
 			}
 		);
 
-		std::cout << sqlite3_exec(this->_db, createAlbumQuery.c_str(), nullptr, nullptr, &errBuff) << std::endl;
+		sqlite3_exec(this->_db, createAlbumQuery.c_str(), nullptr, nullptr, &errBuff);
 	}
 }
 
@@ -247,7 +247,7 @@ bool DatabaseAccess::doesAlbumExists(const std::string& albumName, int userId)
 		""
 	);
 
-	std::cout << sqlite3_exec(this->_db, allAlbumsQuery.c_str(),callback, &albumsData, &errBuff) << std::endl;
+	sqlite3_exec(this->_db, allAlbumsQuery.c_str(), callback, &albumsData, &errBuff);
 	albumsData.pop_back();
 
 	return !albumsData.empty();
