@@ -4,6 +4,7 @@
 #include <WinBase.h>
 #include <synchapi.h>
 #include <iostream>
+#include <signal.h>
 
 #include "Constants.h"
 #include "MyException.h"
@@ -14,6 +15,8 @@
 #define PAINT_PATH "\"C:\\WINDOWS\\system32\\mspaint.exe\""
 #define IRFANVIEW_PATH "\"C:\\Program Files\\IrfanView\\i_view64.exe\""
 
+//global variables
+PROCESS_INFORMATION processInfo;
 
 AlbumManager::AlbumManager(IDataAccess& dataAccess) :
     m_dataAccess(dataAccess), m_nextPictureId(100), m_nextUserId(200)
@@ -446,10 +449,20 @@ bool AlbumManager::isCurrentAlbumSet() const
     return !m_currentAlbumName.empty();
 }
 
+BOOL WINAPI consoleHandler(DWORD signal) 
+{
+	if (signal == CTRL_C_EVENT)
+	{
+		TerminateProcess(processInfo.hProcess, 0);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void AlbumManager::createApplicationProcess(std::string imagePath, int choice) const
 {
 	STARTUPINFO startupInfo;
-	PROCESS_INFORMATION processInfo;
 
 	ZeroMemory(&startupInfo, sizeof(startupInfo));
 	startupInfo.cb = sizeof(startupInfo);
@@ -478,8 +491,14 @@ void AlbumManager::createApplicationProcess(std::string imagePath, int choice) c
 		throw MyException("Open picture failed");
 	}
 
+	if (!SetConsoleCtrlHandler(consoleHandler, TRUE))
+	{
+		throw MyException("Open picture failed");
+	}
+
 	WaitForSingleObject(processInfo.hProcess, INFINITE);
 
+	SetConsoleCtrlHandler(consoleHandler, FALSE);
 	CloseHandle(processInfo.hProcess);
 	CloseHandle(processInfo.hThread);
 }

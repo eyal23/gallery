@@ -1,4 +1,6 @@
 ﻿#pragma once
+
+#include <Windows.h>
 #include <vector>
 #include "Constants.h"
 #include "MemoryAccess.h"
@@ -61,6 +63,5 @@ private:
 
 	static const std::vector<struct CommandGroup> m_prompts;
 	static const std::map<CommandType, handler_func_t> m_commands;
-
 };
 
