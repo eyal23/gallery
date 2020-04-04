@@ -815,7 +815,8 @@ int DatabaseAccess::countAlbumsTaggedOfUser(const User& user)
 		},
 		{ "COUNT(TAGS.TAG_ID) AS TAGS_AMOUNT" },
 		{
-			{ "TAGS_AMOUNT", "0" }
+			{ "TAGS_AMOUNT", "0" },
+			{ std::string("TAGS.") + TAG_USER_ID_COLUMN, std::to_string(user.getId()) }
 		},
 		false,
 		std::string("ALBUMS.") + ALBUM_ID_COLUMN
@@ -836,23 +837,24 @@ int DatabaseAccess::countTagsOfUser(const User& user)
 {
 	std::deque<std::map<std::string, std::string>> tagsData;
 	tagsData.push_back({
-		{ "TAGS_AMOUNT", "" },
+		{ TAG_ID_COLUMN, "" },
 		});
 	char* errBuff = nullptr;
 	std::string tagsAmountOfUserQuery = makeSelectQuery(
 		{ "TAGS" },
 		{},
-		{ "COUNT(TAG_ID) AS TAGS_AMOUNT" },
+		{ TAG_ID_COLUMN },
 		{
 			{ TAG_USER_ID_COLUMN, std::to_string(user.getId()) }
 		},
-		false,
-		TAG_USER_ID_COLUMN
+		true,
+		""
 	);
 
 	sqlite3_exec(this->_db, tagsAmountOfUserQuery.c_str(), callback, &tagsData, &errBuff);
+	tagsData.pop_back();
 
-	return atoi(tagsData.front()["TAGS_AMOUNT"].c_str());
+	return tagsData.size();
 }
 
 /*
@@ -1200,27 +1202,36 @@ std::string DatabaseAccess::makeSelectQuery(std::deque<std::string> tables, std:
 			std::string(" ");
 	}
 
+	if (conditions.size() > 0)
+	{
+		if (!isWhere && conditions.size() > 1 || isWhere)
+		{
+			query += "WHERE ";
+			int i = 0;
+			for (i = isWhere ? 0 : 1; i < conditions.size(); i++)
+			{
+				query += conditions[i].first +
+					std::string(" = ") +
+					conditions[i].second;
+				if (i < conditions.size() - 1)
+				{
+					query += " AND ";
+				}
+			}
+		}
+	}
 
 	if (!isWhere)
 	{
-		query += std::string("GROUP BY ") +
-			groupBy +
-			std::string(" ");
-	}
+		query += std::string(" GROUP BY ") +
+			groupBy;
 
-	if (conditions.size() > 0)
-	{
-		query += isWhere ? "WHERE " : "HAVING ";
-		for (int i = 0; i < conditions.size(); i++)
+		if (conditions.size() > 0)
 		{
-			std::string Operator = conditions[i].first == "TAGS_AMOUNT" ? " > " : " = ";
-			query += conditions[i].first +
-				Operator +
-				conditions[i].second;
-			if (i < conditions.size() - 1)
-			{
-				query += " AND ";
-			}
+			query += std::string(" HAVING ") +
+				conditions[0].first +
+				std::string(" > ") +
+				conditions[0].second;
 		}
 	}
 

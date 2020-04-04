@@ -18,6 +18,8 @@
 #define PAINT_PATH "\"C:\\WINDOWS\\system32\\mspaint.exe\""
 #define IRFANVIEW_PATH "\"C:\\Program Files\\IrfanView\\i_view64.exe\""
 
+BOOL WINAPI consoleHandler(DWORD signal);
+
 //global variables
 PROCESS_INFORMATION processInfo;
 
@@ -396,7 +398,7 @@ void AlbumManager::createCopyOfPicture()
 
 	if (hCopyPicture == INVALID_HANDLE_VALUE)
 	{
-		throw MyException("Error: Creating copy picture failed");
+		throw MyException("Error: Creating copy picture failed (most likely because copy already exists)");
 	}
 
 	DWORD bytesWritten = 0;
