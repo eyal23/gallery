@@ -205,6 +205,11 @@ void AlbumManager::listPicturesInAlbum()
 	std::cout << std::endl;
 }
 
+/*
+	usage: shows a picture with a selected application
+	in: no
+	out: no
+*/
 void AlbumManager::showPicture()
 {
 	refreshOpenAlbum();
@@ -227,13 +232,64 @@ void AlbumManager::showPicture()
 
 	if (choice != 0 && choice != 1)
 	{
-		throw MyException("Ilegal choice!");
+		throw MyException("Error: Ilegal choice.\n");
 	}
 
-	createApplicationProcess(pic.getPath(), choice);
+	std::string beforeOpeningLastWriteDate = getLastModifyDateOfPicture(pic.getPath());
+
+	STARTUPINFO startupInfo;
+
+	ZeroMemory(&startupInfo, sizeof(startupInfo));
+	startupInfo.cb = sizeof(startupInfo);
+	ZeroMemory(&processInfo, sizeof(processInfo));
+
+	std::string cmdCommand = !choice
+		? std::string(PAINT_PATH)
+		: std::string(IRFANVIEW_PATH);
+	cmdCommand += std::string(" \"") +
+		pic.getPath() +
+		std::string("\"");
+
+	if (!CreateProcessA(
+		NULL,
+		(LPSTR)cmdCommand.c_str(),
+		NULL,
+		NULL,
+		FALSE,
+		0,
+		NULL,
+		NULL,
+		&startupInfo,
+		&processInfo
+	))
+	{
+		throw MyException("Error: Launch application failed.\n");
+	}
+
+	if (!SetConsoleCtrlHandler(consoleHandler, TRUE))
+	{
+		throw MyException("Error: Set CTRL+C handler failed.\n");
+	}
+
+	WaitForSingleObject(processInfo.hProcess, INFINITE);
+
+	SetConsoleCtrlHandler(consoleHandler, FALSE);
+	CloseHandle(processInfo.hProcess);
+	CloseHandle(processInfo.hThread);
+
+	std::string afterClosingLastWriteDate = getLastModifyDateOfPicture(pic.getPath());
+	if (afterClosingLastWriteDate != beforeOpeningLastWriteDate)
+	{
+		std::cout << std::endl << "The picture was modified!" << std::endl;
+	}
 }
 
-void AlbumManager::changePictureAttributes()
+/*
+	usage: changes a picture's read attribute
+	in: no
+	out: no
+*/
+void AlbumManager::changePictureReadAttribute()
 {
 	refreshOpenAlbum();
 
@@ -255,13 +311,116 @@ void AlbumManager::changePictureAttributes()
 
 	if (choice != 0 && choice != 1)
 	{
-		throw MyException("Ilegal choice!");
+		throw MyException("Error: Ilegal choice!");
 	}
 
 	SetFileAttributesA(
 		pic.getPath().c_str(),
 		choice ? FILE_ATTRIBUTE_NORMAL : FILE_ATTRIBUTE_READONLY
 	);
+}
+
+/*
+	usage: creates a copy on disc and db of a picture
+	in: no
+	out: no
+*/
+void AlbumManager::createCopyOfPicture()
+{
+	refreshOpenAlbum();
+
+	std::string picName = getInputFromConsole("Enter picture name: ");
+	if (!m_openAlbum.doesPictureExists(picName)) {
+		throw MyException("Error: There is no picture with name <" + picName + ">.\n");
+	}
+
+	auto pic = m_openAlbum.getPicture(picName);
+	if (!fileExistsOnDisk(pic.getPath())) {
+		throw MyException("Error: Can't open <" + picName + "> since it doesnt exist on disk.\n");
+	}
+
+	HANDLE hOriginPicture = CreateFileA(
+		pic.getPath().c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		NULL,
+		NULL
+	);
+
+	if (hOriginPicture == INVALID_HANDLE_VALUE)
+	{
+		throw MyException("Error: Opening origin picture failed");
+	}
+
+	DWORD pictureSize = GetFileSize(hOriginPicture, NULL);
+	BYTE* inBuffer = new BYTE[pictureSize];
+	DWORD bytesRead = 0;
+	BOOL result;
+
+	result = ReadFile(
+		hOriginPicture, 
+		inBuffer,
+		pictureSize,
+		&bytesRead,
+		nullptr
+	);
+
+	CloseHandle(hOriginPicture);
+
+	if (!result)
+	{
+		throw MyException("Error: Reading from origin picture failed");
+	}
+
+	std::string copyPicturePath = pic.getPath();
+
+	while (copyPicturePath.back() != '\\')
+	{
+		copyPicturePath.pop_back();
+	}
+
+	std::string copyPictureName = std::string("CopyOf_") + pic.getName();
+	copyPicturePath += copyPictureName + std::string(".png");
+
+	HANDLE hCopyPicture = CreateFileA(
+		copyPicturePath.c_str(),
+		GENERIC_WRITE,
+		FILE_SHARE_WRITE,
+		NULL,
+		CREATE_NEW,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+
+	if (hCopyPicture == INVALID_HANDLE_VALUE)
+	{
+		throw MyException("Error: Creating copy picture failed");
+	}
+
+	DWORD bytesWritten = 0;
+
+	result = WriteFile(
+		hCopyPicture,
+		inBuffer,
+		pictureSize,
+		&bytesWritten,
+		nullptr
+	);
+
+	CloseHandle(hCopyPicture);
+	delete[] inBuffer;
+
+	if (!result)
+	{
+		throw MyException("Error: Writing into copy picture failed");
+	}
+
+	Picture copyPicture(0, copyPictureName);
+	copyPicture.setPath(copyPicturePath);
+
+	this->m_dataAccess.addPictureToAlbumByName(this->m_openAlbum.getName(), copyPicture);
 }
 
 void AlbumManager::tagUserInPicture()
@@ -488,6 +647,11 @@ bool AlbumManager::isCurrentAlbumSet() const
     return !m_currentAlbumName.empty();
 }
 
+/*
+	usage: handles a ctrl+c event
+	in: the ctrl+c type
+	out: if the ctrl+c event was handled
+*/
 BOOL WINAPI consoleHandler(DWORD signal) 
 {
 	if (signal == CTRL_C_EVENT)
@@ -499,62 +663,16 @@ BOOL WINAPI consoleHandler(DWORD signal)
 	return FALSE;
 }
 
-void AlbumManager::createApplicationProcess(std::string imagePath, int choice) const
-{
-	std::string beforeOpeningLastWriteDate = getLastModifyDateOfPicture(imagePath);
-
-	STARTUPINFO startupInfo;
-
-	ZeroMemory(&startupInfo, sizeof(startupInfo));
-	startupInfo.cb = sizeof(startupInfo);
-	ZeroMemory(&processInfo, sizeof(processInfo));
-
-	std::string cmdCommand = !choice 
-		? std::string(PAINT_PATH) 
-		: std::string(IRFANVIEW_PATH);
-	cmdCommand += std::string(" \"") +
-		imagePath +
-		std::string("\"");
-
-	if (!CreateProcessA(
-		NULL,
-		(LPSTR)cmdCommand.c_str(),
-		NULL,
-		NULL,
-		FALSE,
-		0,
-		NULL,
-		NULL,
-		&startupInfo,
-		&processInfo
-	))
-	{
-		throw MyException("Open picture failed");
-	}
-
-	if (!SetConsoleCtrlHandler(consoleHandler, TRUE))
-	{
-		throw MyException("Open picture failed");
-	}
-
-	WaitForSingleObject(processInfo.hProcess, INFINITE);
-
-	SetConsoleCtrlHandler(consoleHandler, FALSE);
-	CloseHandle(processInfo.hProcess);
-	CloseHandle(processInfo.hThread);
-
-	std::string afterClosingLastWriteDate = getLastModifyDateOfPicture(imagePath);
-	if (afterClosingLastWriteDate != beforeOpeningLastWriteDate)
-	{
-		std::cout << std::endl << "The picture was modified!" << std::endl;
-	}
-}
-
-std::string AlbumManager::getLastModifyDateOfPicture(std::string imagePath) const
+/*
+	usage: gets the last time a picture was modified
+	in: the picture's path
+	out: the last time the picture was modified
+*/
+std::string AlbumManager::getLastModifyDateOfPicture(std::string picturePath) const
 {
 	DWORD result;
 	HANDLE hPicture = CreateFile(
-		imagePath.c_str(),
+		picturePath.c_str(),
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		NULL,
@@ -565,7 +683,7 @@ std::string AlbumManager::getLastModifyDateOfPicture(std::string imagePath) cons
 
 	if (hPicture == INVALID_HANDLE_VALUE)
 	{
-		throw MyException("Open picture failed");
+		throw MyException("Error: Open picture failed.\n");
 	}
 
 	FILETIME ftPictureCreationDate, ftPictureLastAccessDate, ftPictureLastWriteDate;
@@ -575,7 +693,7 @@ std::string AlbumManager::getLastModifyDateOfPicture(std::string imagePath) cons
 
 	if (!result)
 	{
-		throw MyException("Open picture failed");
+		throw MyException("Error: Get last modify date failed.\n");
 	}
 
 	SYSTEMTIME utc, localTime;
@@ -599,7 +717,7 @@ std::string AlbumManager::getLastModifyDateOfPicture(std::string imagePath) cons
 
 	if (result != S_OK)
 	{
-		throw MyException("Open picture failed");
+		throw MyException("Error: Converting failed.\n");
 	}
 
 	return std::string(tPictureLastWriteTime);
@@ -623,7 +741,8 @@ const std::vector<struct CommandGroup> AlbumManager::m_prompts  = {
 			{ ADD_PICTURE    , "Add picture." },
 			{ REMOVE_PICTURE , "Remove picture." },
 			{ SHOW_PICTURE   , "Show picture." },
-			{ CHANGE_PICTURE_ATTRIBUTES , "Change picture attributes." },
+			{ CHANGE_PICTURE_READ_ATTRIBUTE , "Change picture read attribute." },
+			{ CREATE_COPY_OF_PICTURE, "Create copy of a picture." },
 			{ LIST_PICTURES  , "List pictures." },
 			{ TAG_USER		 , "Tag user." },
 			{ UNTAG_USER	 , "Untag user." },
@@ -667,7 +786,8 @@ const std::map<CommandType, AlbumManager::handler_func_t> AlbumManager::m_comman
 	{ REMOVE_PICTURE, &AlbumManager::removePictureFromAlbum },
 	{ LIST_PICTURES, &AlbumManager::listPicturesInAlbum },
 	{ SHOW_PICTURE, &AlbumManager::showPicture },
-	{ CHANGE_PICTURE_ATTRIBUTES, &AlbumManager::changePictureAttributes },
+	{ CHANGE_PICTURE_READ_ATTRIBUTE, &AlbumManager::changePictureReadAttribute },
+	{ CREATE_COPY_OF_PICTURE, &AlbumManager::createCopyOfPicture },
 	{ TAG_USER, &AlbumManager::tagUserInPicture, },
 	{ UNTAG_USER, &AlbumManager::untagUserInPicture },
 	{ LIST_TAGS, &AlbumManager::listUserTags },
