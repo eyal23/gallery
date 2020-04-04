@@ -38,6 +38,7 @@ private:
 	void removePictureFromAlbum();
 	void listPicturesInAlbum();
 	void showPicture();
+	void changePictureAttributes();
 
 	// tags related
 	void tagUserInPicture();

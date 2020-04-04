@@ -223,9 +223,45 @@ void AlbumManager::showPicture()
 		<< "1. Paint" << std::endl
 		<< "2. IrfanView" << std::endl;
 
-	int choice = stoi(getInputFromConsole(""));
+	int choice = stoi(getInputFromConsole("")) - 1;
+
+	if (choice != 0 && choice != 1)
+	{
+		throw MyException("Ilegal choice!");
+	}
 
 	createApplicationProcess(pic.getPath(), choice);
+}
+
+void AlbumManager::changePictureAttributes()
+{
+	refreshOpenAlbum();
+
+	std::string picName = getInputFromConsole("Enter picture name: ");
+	if (!m_openAlbum.doesPictureExists(picName)) {
+		throw MyException("Error: There is no picture with name <" + picName + ">.\n");
+	}
+
+	auto pic = m_openAlbum.getPicture(picName);
+	if (!fileExistsOnDisk(pic.getPath())) {
+		throw MyException("Error: Can't open <" + picName + "> since it doesnt exist on disk.\n");
+	}
+
+	std::cout << "Do you want the picture to have read-only access?-" << std::endl
+		<< "1. yes" << std::endl
+		<< "2. no" << std::endl;
+
+	int choice = stoi(getInputFromConsole("")) - 1;
+
+	if (choice != 0 && choice != 1)
+	{
+		throw MyException("Ilegal choice!");
+	}
+
+	SetFileAttributesA(
+		pic.getPath().c_str(),
+		choice ? FILE_ATTRIBUTE_NORMAL : FILE_ATTRIBUTE_READONLY
+	);
 }
 
 void AlbumManager::tagUserInPicture()
@@ -473,7 +509,7 @@ void AlbumManager::createApplicationProcess(std::string imagePath, int choice) c
 	startupInfo.cb = sizeof(startupInfo);
 	ZeroMemory(&processInfo, sizeof(processInfo));
 
-	std::string cmdCommand = choice == 1 
+	std::string cmdCommand = !choice 
 		? std::string(PAINT_PATH) 
 		: std::string(IRFANVIEW_PATH);
 	cmdCommand += std::string(" \"") +
@@ -587,6 +623,7 @@ const std::vector<struct CommandGroup> AlbumManager::m_prompts  = {
 			{ ADD_PICTURE    , "Add picture." },
 			{ REMOVE_PICTURE , "Remove picture." },
 			{ SHOW_PICTURE   , "Show picture." },
+			{ CHANGE_PICTURE_ATTRIBUTES , "Change picture attributes." },
 			{ LIST_PICTURES  , "List pictures." },
 			{ TAG_USER		 , "Tag user." },
 			{ UNTAG_USER	 , "Untag user." },
@@ -630,6 +667,7 @@ const std::map<CommandType, AlbumManager::handler_func_t> AlbumManager::m_comman
 	{ REMOVE_PICTURE, &AlbumManager::removePictureFromAlbum },
 	{ LIST_PICTURES, &AlbumManager::listPicturesInAlbum },
 	{ SHOW_PICTURE, &AlbumManager::showPicture },
+	{ CHANGE_PICTURE_ATTRIBUTES, &AlbumManager::changePictureAttributes },
 	{ TAG_USER, &AlbumManager::tagUserInPicture, },
 	{ UNTAG_USER, &AlbumManager::untagUserInPicture },
 	{ LIST_TAGS, &AlbumManager::listUserTags },
