@@ -60,6 +60,7 @@ private:
 	void refreshOpenAlbum();
     bool isCurrentAlbumSet() const;
 	void createApplicationProcess(std::string imagePath, int choice) const;
+	std::string getLastModifyDateOfPicture(std::string imagePath) const;
 
 	static const std::vector<struct CommandGroup> m_prompts;
 	static const std::map<CommandType, handler_func_t> m_commands;

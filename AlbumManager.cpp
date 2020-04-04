@@ -3,6 +3,9 @@
 #include <Windows.h>
 #include <WinBase.h>
 #include <synchapi.h>
+#include <tchar.h>
+#include <strsafe.h>
+#include <string>
 #include <iostream>
 #include <signal.h>
 
@@ -462,6 +465,8 @@ BOOL WINAPI consoleHandler(DWORD signal)
 
 void AlbumManager::createApplicationProcess(std::string imagePath, int choice) const
 {
+	std::string beforeOpeningLastWriteDate = getLastModifyDateOfPicture(imagePath);
+
 	STARTUPINFO startupInfo;
 
 	ZeroMemory(&startupInfo, sizeof(startupInfo));
@@ -501,6 +506,67 @@ void AlbumManager::createApplicationProcess(std::string imagePath, int choice) c
 	SetConsoleCtrlHandler(consoleHandler, FALSE);
 	CloseHandle(processInfo.hProcess);
 	CloseHandle(processInfo.hThread);
+
+	std::string afterClosingLastWriteDate = getLastModifyDateOfPicture(imagePath);
+	if (afterClosingLastWriteDate != beforeOpeningLastWriteDate)
+	{
+		std::cout << std::endl << "The picture was modified!" << std::endl;
+	}
+}
+
+std::string AlbumManager::getLastModifyDateOfPicture(std::string imagePath) const
+{
+	DWORD result;
+	HANDLE hPicture = CreateFile(
+		imagePath.c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+
+	if (hPicture == INVALID_HANDLE_VALUE)
+	{
+		throw MyException("Open picture failed");
+	}
+
+	FILETIME ftPictureCreationDate, ftPictureLastAccessDate, ftPictureLastWriteDate;
+
+	result = GetFileTime(hPicture, &ftPictureCreationDate, &ftPictureLastAccessDate, &ftPictureLastWriteDate);
+	CloseHandle(hPicture);
+
+	if (!result)
+	{
+		throw MyException("Open picture failed");
+	}
+
+	SYSTEMTIME utc, localTime;
+	TCHAR tPictureLastWriteTime[MAX_PATH];
+
+	FileTimeToSystemTime(&ftPictureLastWriteDate, &utc);
+	SystemTimeToTzSpecificLocalTime(NULL, &utc, &localTime);
+
+	result = StringCchPrintf(
+		tPictureLastWriteTime, 
+		MAX_PATH,
+		TEXT("%02d/%02d/%d  %02d:%02d:%02d:%02d"),
+		localTime.wMonth,
+		localTime.wDay,
+		localTime.wYear,
+		localTime.wHour,
+		localTime.wMinute,
+		localTime.wSecond,
+		localTime.wMilliseconds
+	);
+
+	if (result != S_OK)
+	{
+		throw MyException("Open picture failed");
+	}
+
+	return std::string(tPictureLastWriteTime);
 }
 
 const std::vector<struct CommandGroup> AlbumManager::m_prompts  = {
