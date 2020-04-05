@@ -1100,7 +1100,7 @@ int DatabaseAccess::callback(void* data, int argc, char** argv, char** azColName
 	in: the table to insert to, the values
 	out: the query
 */
-std::string DatabaseAccess::makeInsertQuery(std::string table, std::deque<std::string> values)
+std::string DatabaseAccess::makeInsertQuery(std::string table, std::deque<std::string> values) const
 {
 	std::string query = std::string("INSERT INTO ") +
 		table +
@@ -1144,7 +1144,7 @@ std::string DatabaseAccess::makeInsertQuery(std::string table, std::deque<std::s
 	in: the table to delete from, the conditions
 	out: the query
 */
-std::string DatabaseAccess::makeDeleteQuery(std::string table, std::deque<std::pair<std::string, std::string>> conditions)
+std::string DatabaseAccess::makeDeleteQuery(std::string table, std::deque<std::pair<std::string, std::string>> conditions) const
 {
 	std::string query = std::string("DELETE FROM ") +
 		table +
@@ -1173,7 +1173,7 @@ std::string DatabaseAccess::makeDeleteQuery(std::string table, std::deque<std::p
 	in: the tables to select from, the joiners between tables, the fields to return, the conditions, if to use "WHERE" or "HAVING", how to groug by
 	out: the query
 */
-std::string DatabaseAccess::makeSelectQuery(std::deque<std::string> tables, std::deque<std::pair<std::string, std::string>> joiners, std::deque<std::string> returnFields, std::deque<std::pair<std::string, std::string>> conditions, bool isWhere, std::string groupBy)
+std::string DatabaseAccess::makeSelectQuery(std::deque<std::string> tables, std::deque<std::pair<std::string, std::string>> joiners, std::deque<std::string> returnFields, std::deque<std::pair<std::string, std::string>> conditions, bool isWhere, std::string groupBy) const
 {
 	std::string query = "SELECT ";
 

@@ -57,8 +57,8 @@ private:
 	bool initDatabase();
 	static int callback(void* data, int argc, char** argv, char** azColName);
 
-	std::string makeInsertQuery(std::string table, std::deque<std::string> values);
-	std::string makeDeleteQuery(std::string table, std::deque<std::pair<std::string, std::string>> conditions);
-	std::string makeSelectQuery(std::deque<std::string> tables, std::deque<std::pair<std::string, std::string>> joiners, std::deque<std::string> returnFields, std::deque<std::pair<std::string, std::string>> conditions, bool isWhere, std::string groupBy);
+	std::string makeInsertQuery(std::string table, std::deque<std::string> values) const;
+	std::string makeDeleteQuery(std::string table, std::deque<std::pair<std::string, std::string>> conditions) const;
+	std::string makeSelectQuery(std::deque<std::string> tables, std::deque<std::pair<std::string, std::string>> joiners, std::deque<std::string> returnFields, std::deque<std::pair<std::string, std::string>> conditions, bool isWhere, std::string groupBy) const;
 };
 
