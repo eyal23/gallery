@@ -1,4 +1,6 @@
 ﻿#pragma once
+
+#include <Windows.h>
 #include <vector>
 #include "Constants.h"
 #include "MemoryAccess.h"
@@ -36,6 +38,8 @@ private:
 	void removePictureFromAlbum();
 	void listPicturesInAlbum();
 	void showPicture();
+	void changePictureReadAttribute();
+	void createCopyOfPicture();
 
 	// tags related
 	void tagUserInPicture();
@@ -57,9 +61,9 @@ private:
 	bool fileExistsOnDisk(const std::string& filename);
 	void refreshOpenAlbum();
     bool isCurrentAlbumSet() const;
+	std::string getLastModifyDateOfPicture(std::string picturePath) const;
 
 	static const std::vector<struct CommandGroup> m_prompts;
 	static const std::map<CommandType, handler_func_t> m_commands;
-
 };
 
