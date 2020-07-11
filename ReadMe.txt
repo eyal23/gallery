@@ -1,28 +1,10 @@
-========================================================================
-    CONSOLE APPLICATION : Gallery Project Overview
-========================================================================
+# Gallery
 
-magshimim has created this Gallery application for you.
+A desktop gallery app where you can:
+- Create albums
+- Tag other users in images
+- Edit images with external softwares
 
-This file contains a summary of what you will find in each of the files that
-make up your Gallery application.
+# How to run
 
-
-Gallery.vcxproj
-    This is the main project file for VC++ projects generated using an Application Wizard.
-    It contains information about the version of Visual C++ that generated the file, and
-    information about the platforms, configurations, and project features selected with the
-    Application Wizard.
-
-Gallery.vcxproj.filters
-    This is the filters file for VC++ projects generated using an Application Wizard. 
-    It contains information about the association between the files in your project 
-    and the filters. This association is used in the IDE to show grouping of files with
-    similar extensions under a specific node (for e.g. ".cpp" files are associated with the
-    "Source Files" filter).
-
-Gallery.cpp
-    This is the main application source file.
-
-
-/////////////////////////////////////////////////////////////////////////////
+Execute "Gallery.exe" file
